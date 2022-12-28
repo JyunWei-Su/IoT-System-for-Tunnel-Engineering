@@ -16,3 +16,6 @@ IoT System for Tunnel Engineering (2022 NCHU EE IoT Course)
 
 ## 說明
 * 參考: `專題說明.pdf`
+
+## 其他
+* 小米藍芽溫濕度計2使用ATC韌體([Link](https://pvvx.github.io/ATC_MiThermometer/TelinkMiFlasher.html))
