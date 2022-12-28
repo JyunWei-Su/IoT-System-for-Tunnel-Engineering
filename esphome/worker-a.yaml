@@ -1,0 +1,128 @@
+substitutions:
+  # Modify variables based on your settings
+  # hostname: !secret hostname
+  devicename: worker-a       ## 只需要改這裡
+
+esphome:
+  name: ${devicename}
+  platform: ESP32
+  board: nodemcu-32s
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "mpP1UUKR9GZtHhEgy5He9YXGaEp1lUGerl8Re0TuYFE="
+  password: !secret api_password
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: AP ${devicename}
+    password: !secret wifi_password
+
+web_server:
+  port: 80
+
+captive_portal:
+
+esp32_ble_tracker:
+
+ble_client:
+  - mac_address: D8:A0:1D:58:75:7A
+    id: wrist
+
+text_sensor:
+
+# ref: https://esphome.io/components/sensor/index.html
+sensor:
+  # ref: https://esphome.io/components/sensor/ble_client.html
+  - platform: ble_client
+    ble_client_id: wrist
+    name: ${devicename} beats
+    id: beats_string
+    type: characteristic
+    icon: 'mdi:heart-pulse'
+    service_uuid: '4fafc201-1fb5-459e-8fcc-c5c9c331914b'
+    characteristic_uuid: 'beb5483e-36e1-4688-b7f5-ea07361b26a8'
+    update_interval: 10s
+    unit_of_measurement: 'bpm'
+    
+
+  - platform: ble_client
+    ble_client_id: wrist
+    name: ${devicename} oxygen
+    type: characteristic
+    icon: 'mdi:percent-circle-outline'
+    service_uuid: '4fafc201-1fb5-459e-8fcc-c5c9c331914c'
+    characteristic_uuid: 'beb5483e-36e1-4688-b7f5-ea07361b26a9'
+    update_interval: 10s
+    unit_of_measurement: '%'
+
+  - platform: ble_client
+    ble_client_id: wrist
+    name: ${devicename} emergency
+    type: characteristic
+    icon: 'mdi:account-alert'
+    service_uuid: '4fafc201-1fb5-459e-8fcc-c5c9c331914d'
+    characteristic_uuid: 'beb5483e-36e1-4688-b7f5-ea07361b26aa'
+    update_interval: 3s
+  
+  # ref: https://esphome.io/components/sensor/adc.html
+  - platform: adc
+    id: source_sensor_CO
+    pin: GPIO36
+    icon: 'mdi:molecule-co'
+    name: ${devicename} CO
+    update_interval: 2s
+    unit_of_measurement: 'ppm'
+    attenuation: auto
+    filters: 
+      - lambda: |-
+          int y = x * (-1000) + 1800;
+          if (y > 0) { return y; }
+          else {return 0;}
+  
+  - platform: adc
+    id: source_sensor_GAS
+    pin: GPIO33
+    icon: 'mdi:gas-cylinder'
+    name: ${devicename} GAS
+    update_interval: 2s
+    unit_of_measurement: 'ppm'
+    attenuation: auto
+    filters: 
+      - lambda: |-
+          int y = x * (-1000) + 1800;
+          if (y > 0) { return y; }
+          else {return 0;}
+
+binary_sensor:
+  - platform: template
+    name: ${devicename} Warning CO
+    icon: 'mdi:molecule-co'
+    lambda: |-
+      if (id(source_sensor_CO).state < 150) {
+        return false;
+      } else {
+        return true;
+      }
+  
+  - platform: template
+    name: ${devicename} Warning GAS
+    icon: 'mdi:gas-cylinder'
+    lambda: |-
+      if (id(source_sensor_GAS).state < 150) {
+        return false;
+      } else {
+        return true;
+      }
+  
